@@ -52,7 +52,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     log.debug( f'args: {args}' )
     ## get input path
-    input_path = args.input_path if args.input_path else "./source_xml_files/2023-11-10_items_xml_export.xml"
+    input_path = args.input_path if args.input_path else "../source_xml_files/2023-11-10_items_xml_export.xml"
     log.debug( f'input_path: {input_path}' )
     ## make output path
     output_path: str = make_output_path( input_path )
