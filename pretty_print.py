@@ -1,5 +1,6 @@
+""" Pretty prints source XML file. """
+
 import argparse, logging, os, pathlib
-# import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 lglvl: str = os.environ.get( 'LOGLEVEL', 'DEBUG' )
@@ -14,6 +15,7 @@ log = logging.getLogger( __name__ )
 log.debug( 'logging working' )
 
 
+## manager function -------------------------------------------------
 def pretty_print_xml( input_filepath: str, output_filepath: str ):
     """ Just outputs a pretty-printed XML file.
         Called by dundermain. """
@@ -27,26 +29,6 @@ def pretty_print_xml( input_filepath: str, output_filepath: str ):
     with open( output_filepath, 'w' ) as f:
         f.write( formatted_xml )
     return
-
-
-# def pretty_print_xml( input_filepath: str, output_filepath: str ):
-#     """ Just outputs a pretty-printed XML file.
-#         Called by dundermain. """
-#     # Parse the XML file
-#     tree = ET.parse(input_filepath)
-#     root = tree.getroot()
-
-#     # Create a string with pretty-printed XML
-#     pretty_xml = ET.tostring(root, encoding='unicode', method='xml')
-    
-#     # Add indentation
-#     from xml.dom import minidom
-#     dom = minidom.parseString(pretty_xml)
-#     pretty_xml_as_string = dom.toprettyxml()
-
-#     # Write the pretty-printed XML to a new file
-#     with open(output_filepath, 'w') as f:
-#         f.write(pretty_xml_as_string)
 
 
 def make_output_path( input_path: str ):
