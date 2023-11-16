@@ -8,11 +8,19 @@ Output:
 (as of 2023-Nov-16)
     len(row_elements), ``177237``
     len(unique_organization_ids), ``39137``
+    orgs sorted by count: [
+        ('HH_035484', 5258),
+        ('HH_035483', 3751),
+        ('HH_022330', 1594),
+        ('HH_035485', 843),
+        etc...
 
-Note that if the number of row-elements (items) is c.177K, and our number of scans is c.800K, then there are an _average_ of c.4.5 pages per item.
+Notes:
+- over 23K organizations have only 1 item.
+- if the number of row-elements (items) is c.177K, and our number of scans is c.800K, then there are an _average_ of c.4.5 pages per item.
 """
 
-import argparse, logging, os
+import argparse, logging, os, pprint
 import xml.etree.ElementTree as ET
 
 lglvl: str = os.environ.get( 'LOGLEVEL', 'DEBUG' )
@@ -40,8 +48,9 @@ def get_collection_info( source_filepath: str ) -> None:
     ## instantiate xml object
     xml_obj: ET.Element = ET.fromstring( source_xml_string )
 
-    ## instantiate set for unique-ids   
+    ## instantiate holders
     unique_organization_ids = set()
+    items_per_organization = {}
 
     ## get all row elements
     row_elements: list = xml_obj.findall('.//fmp:ROW', ns)
@@ -54,11 +63,15 @@ def get_collection_info( source_filepath: str ) -> None:
         data_element = row_element.find('.//fmp:COL/fmp:DATA', ns)  # type(data_element) == ET.Element
         # log.debug( f'data_element: ``{data_element}``')
         if data_element is not None and data_element.text is not None:
-            unique_organization_ids.add(data_element.text.strip())
+            org_id = data_element.text.strip()
+            unique_organization_ids.add(org_id)
+            ## increment org count
+            items_per_organization[org_id] = items_per_organization.get(org_id, 0) + 1
 
     ## output results
     log.info( f'len(unique_organization_ids), ``{len(unique_organization_ids)}``' )
-    # log.debug( f'unique_organization_ids, ``{unique_organization_ids}``' )
+    orgs_sorted_by_count = sorted(items_per_organization.items(), key=lambda x: x[1], reverse=True)
+    log.info( f'orgs sorted by count: {pprint.pformat(orgs_sorted_by_count)}' )
 
     return
 
