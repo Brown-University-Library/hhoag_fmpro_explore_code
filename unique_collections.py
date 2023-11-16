@@ -7,7 +7,7 @@ Usage:
 Output:
 (as of 2023-Nov-16)
     len(row_elements), ``177237``
-    len(unique_ids), ``39137``
+    len(unique_organization_ids), ``39137``
 
 Note that if the number of row-elements (items) is c.177K, and our number of scans is c.800K, then there are an _average_ of c.4.5 pages per item.
 """
@@ -41,7 +41,7 @@ def get_collection_info( source_filepath: str ) -> None:
     xml_obj: ET.Element = ET.fromstring( source_xml_string )
 
     ## instantiate set for unique-ids   
-    unique_ids = set()
+    unique_organization_ids = set()
 
     ## get all row elements
     row_elements: list = xml_obj.findall('.//fmp:ROW', ns)
@@ -54,11 +54,11 @@ def get_collection_info( source_filepath: str ) -> None:
         data_element = row_element.find('.//fmp:COL/fmp:DATA', ns)  # type(data_element) == ET.Element
         # log.debug( f'data_element: ``{data_element}``')
         if data_element is not None and data_element.text is not None:
-            unique_ids.add(data_element.text.strip())
+            unique_organization_ids.add(data_element.text.strip())
 
     ## output results
-    log.info( f'len(unique_ids), ``{len(unique_ids)}``' )
-    # log.debug( f'unique_ids, ``{unique_ids}``' )
+    log.info( f'len(unique_organization_ids), ``{len(unique_organization_ids)}``' )
+    # log.debug( f'unique_organization_ids, ``{unique_organization_ids}``' )
 
     return
 
