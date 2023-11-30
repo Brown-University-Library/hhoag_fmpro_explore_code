@@ -1,6 +1,13 @@
-import datetime, json, os, pprint
+import argparse, datetime, json, logging, os, pprint
 import lxml
 from lxml import etree
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(levelname)s [%(module)s-%(funcName)s()::%(lineno)d] %(message)s',
+    datefmt='%d/%b/%Y %H:%M:%S' )
+log = logging.getLogger( '__name__' )
 
 
 class SourceDictMaker:
@@ -220,14 +227,20 @@ class SourceDictMaker:
         return
 
   # end class SourceDictMaker()
-
-
-
+    
 
 if __name__ == '__main__':
-    """ Assumes env is activated. """
-    FMPRO_XML_PATH = os.path.join('data', 'b__all_data_formatted.xml')
-    JSON_OUTPUT_PATH = os.path.join('data', 'c__accession_number_to_data_dict.json')
+    log.debug( 'starting dundermain' )
+    start_time = datetime.datetime.now()
+    ## get args -----------------------------------------------------
+    parser = argparse.ArgumentParser( description='expects source-xml-path, and output-json-path.' )
+    parser.add_argument( '--source_path', type=str, help='path to source xml file' )
+    parser.add_argument( '--output_path', type=str, help='path to output json file' )
+    args = parser.parse_args()
+    FMPRO_XML_PATH = args.source_path
+    JSON_OUTPUT_PATH = args.output_path
+    ## run converter ------------------------------------------------
     maker = SourceDictMaker()
-    maker.convert_fmproxml_to_json(
-        FMPRO_XML_PATH, JSON_OUTPUT_PATH )
+    maker.convert_fmproxml_to_json( FMPRO_XML_PATH, JSON_OUTPUT_PATH )
+    elapsed_time = datetime.datetime.now() - start_time
+    log.debug( 'ending dundermain; elapsed_time, ``%s``' % elapsed_time )
