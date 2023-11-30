@@ -48,16 +48,19 @@ class SourceDictMaker:
         #Make initial dict-list
         #Purpose: creates initial list of dict-items. For a given key, the value-type may vary by item.
         #Example returned data: [ {'artist_alias': 'abc', 'artist_birth_country_id': '123', etc.}, {etc.}, ... ]
+        log.info( 'about to make initial dict-list' )
         result_list = self._process_rows( xml_doc_rows, self.NAMESPACE, dict_keys )
         #
         #Make key-type dict
         #Purpose: creats dict of key-name:key-type; all data examined to see which keys should have list vs unicode-string values.
         #Example returned data: [  {'ARTISTS::calc_nationality': <type 'list'>, 'ARTISTS::use_alias_flag': <type 'unicode'>, etc.} ]
+        log.info( 'about to make key-type dict' )
         key_type_dict = self._make_key_type_dict( result_list )
         #
         #Normalize dict-values
         #Purpose: creates final list of dict-items. For a given key, the value-type will _not_ vary by item.
         #Example returned data: [ {'artist_alias': ['abc'], 'artist_birth_country_id': ['123'], etc.}, {etc.}, ... ]
+        log.info( 'about to normalize dict-values' )
         result_list = self._normalize_value_types( key_type_dict, result_list )
         #
         #Dictify item-list
@@ -65,9 +68,11 @@ class SourceDictMaker:
         #Example returned data: { count:5000,
                               #   items:{ accnum_1:{artist:abc, title:def}, accnum_2:{etc.}, etc. }
                               # }
+        log.info( 'about to dictify item-list' )
         dictified_data = self._dictify_data( result_list )
         #
         #Output json
+        log.info( 'about to save json' )
         self._save_json( dictified_data, JSON_OUTPUT_PATH )
 
     def _get_data( self, FMPRO_XML_PATH ):
@@ -204,6 +209,7 @@ class SourceDictMaker:
             log.debug( f'entry, ``{pprint.pformat(entry)}``' )
             if entry['Record ID']:  # handles a null entry
                 log.debug( 'entry has "Record ID"' )
+                log.info( f'processing record-id, ``{entry["Record ID"]}``' )
                 rec_num = entry['Record ID'].strip()
                 log.debug( f'rec_num, ``{rec_num}``' )
                 if rec_num in rec_number_dict:
