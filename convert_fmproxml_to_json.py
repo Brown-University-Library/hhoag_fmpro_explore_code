@@ -18,6 +18,7 @@ class SourceDictMaker:
 
     def __init__( self ):
         self.NAMESPACE = { 'default': 'http://www.filemaker.com/fmpxmlresult' }
+        self.expected_column_count = 24  # as of 2023-11-10 export
 
     def convert_fmproxml_to_json(
         self, FMPRO_XML_PATH, JSON_OUTPUT_PATH ):
@@ -79,8 +80,9 @@ class SourceDictMaker:
     def _docify_xml( self, unicode_xml_string):
         ''' Returns xml-doc. '''
         byte_string = unicode_xml_string.encode('utf-8', 'replace')
-        XML_DOC = etree.fromstring( byte_string )  # str required because xml contains an encoding declaration
-        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)
+        parser = etree.XMLParser()
+        XML_DOC = etree.fromstring( byte_string, parser )  # str required because xml contains an encoding declaration
+        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)  # type: ignore
         return XML_DOC
 
     def _make_dict_keys( self, XML_DOC, NAMESPACE ):
@@ -112,7 +114,7 @@ class SourceDictMaker:
           ## get columns (fixed number of columns per row)
           xpath = 'default:COL'
           columns = row.xpath( xpath, namespaces=(NAMESPACE) )
-          assert len(columns) == 36, len(columns);   # was less before spring db revision
+          assert len(columns) == self.expected_column_count, len(columns)
           ## get data_elements (variable number per column)
           item_dict = self._makeDataDict( columns, NAMESPACE, dict_keys )
           result_list.append( item_dict )  # if i > 5: break
@@ -183,9 +185,9 @@ class SourceDictMaker:
     def _normalize_value_types( self, key_type_dict, result_list ):
         ''' Determines stable type for each field. '''
         updated_result_list = []
-        assert len( key_type_dict.keys() ) == 36
+        assert len( key_type_dict.keys() ) == self.expected_column_count
         for entry_dict in result_list:
-          assert len( entry_dict.keys() ) == 36
+          assert len( entry_dict.keys() ) == self.expected_column_count
           for key, val in entry_dict.items():
             if key_type_dict[key] == list and ( type(val) == str or val == None ) :
               entry_dict[key] = [ val ]
@@ -193,31 +195,70 @@ class SourceDictMaker:
         return updated_result_list
 
     def _dictify_data( self, source_list ):
-        """ Takes raw bell list of dict_data, returns accession-number dict. """
-        accession_number_dict = {}
-        num_duplicates = 0
+        """ Takes raw list of dict_data, returns hall-hoag item-number dict. 
+            (Note that item-numbers here appear to be box-numbers.) """
+        log.debug( f'source_list, ``{pprint.pformat(source_list)}``' )
+        rec_number_dict = {}
+        num_duplicates_all = 0
         for entry in source_list:
-            if entry['calc_accession_id']:  # handles a null entry
-                accession_num = entry['calc_accession_id'].strip()
-                if accession_num in accession_number_dict:
+            log.debug( f'entry, ``{pprint.pformat(entry)}``' )
+            if entry['Record ID']:  # handles a null entry
+                log.debug( 'entry has "Record ID"' )
+                rec_num = entry['Record ID'].strip()
+                log.debug( f'rec_num, ``{rec_num}``' )
+                if rec_num in rec_number_dict:
+                    log.debug( 'rec_num already in rec_number_dict, so appending' )
+                    rec_number_dict[rec_num]['items'].append( entry )
                     #print out the error, with the information about what's duplicated
                     #don't raise an exception, because we want to find all the duplicates in one run
-                    print(f'duplicate accession number: "{accession_num}"')
-                    print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
-                    print(f'  object_id: {accession_number_dict[accession_num]["object_id"]}; title: {accession_number_dict[accession_num]["object_title"]}')
-                    num_duplicates += 1
-                accession_number_dict[accession_num] = entry
+                    print(f'duplicate rec_num: "{rec_num}"')
+                    # print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+                    # print(f'  object_id: {rec_number_dict[rec_num]["object_id"]}; title: {rec_number_dict[rec_num]["object_title"]}')
+                    num_duplicates_all += 1
+                    rec_number_dict[rec_num]['count'] += 1
+                else:
+                    log.debug( 'rec_num not already in rec_number_dict, so adding it' )
+                    log.debug( f'rec_num_dict, ``{pprint.pformat(rec_number_dict)}``' )
+                    new_dict = {'count': 1, 'items': [entry]}
+                    rec_number_dict[rec_num] = new_dict
             else:
-                print(f'no accession number for record')
-                print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+                print(f'no rec_num for entry, ``{entry}``')
+
         final_dict = {
-          'count': len( accession_number_dict.items() ),
+          'count': len( rec_number_dict.items() ),
           'datetime': str( datetime.datetime.now() ),
-          'items': accession_number_dict }
+          'items': rec_number_dict }
         print(f'Total records in DB: {len(source_list)}')
         print(f'Valid items: {final_dict["count"]}')
-        print(f'number of duplicates: {num_duplicates}')
+        print(f'number of duplicates: {num_duplicates_all}')
         return final_dict
+
+    # def _dictify_data( self, source_list ):
+    #     """ Takes raw bell list of dict_data, returns accession-number dict. """
+    #     accession_number_dict = {}
+    #     num_duplicates = 0
+    #     for entry in source_list:
+    #         if entry['calc_accession_id']:  # handles a null entry
+    #             accession_num = entry['calc_accession_id'].strip()
+    #             if accession_num in accession_number_dict:
+    #                 #print out the error, with the information about what's duplicated
+    #                 #don't raise an exception, because we want to find all the duplicates in one run
+    #                 print(f'duplicate accession number: "{accession_num}"')
+    #                 print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+    #                 print(f'  object_id: {accession_number_dict[accession_num]["object_id"]}; title: {accession_number_dict[accession_num]["object_title"]}')
+    #                 num_duplicates += 1
+    #             accession_number_dict[accession_num] = entry
+    #         else:
+    #             print(f'no accession number for record')
+    #             print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+    #     final_dict = {
+    #       'count': len( accession_number_dict.items() ),
+    #       'datetime': str( datetime.datetime.now() ),
+    #       'items': accession_number_dict }
+    #     print(f'Total records in DB: {len(source_list)}')
+    #     print(f'Valid items: {final_dict["count"]}')
+    #     print(f'number of duplicates: {num_duplicates}')
+    #     return final_dict
 
     def _save_json( self, result_list, JSON_OUTPUT_PATH ):
         ''' Saves the list of item-dicts to .json file. '''
