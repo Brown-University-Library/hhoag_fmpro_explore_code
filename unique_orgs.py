@@ -1,5 +1,6 @@
 """
 Outputs number of unique organization-IDs.
+Note: the count appears to be 'boxes' not 'items'.
 
 Usage:
     python unique_collections.py --input_path "/path/to/file.xml"
