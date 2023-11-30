@@ -4,7 +4,7 @@ from lxml import etree
 
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='[%(asctime)s] %(levelname)s [%(module)s-%(funcName)s()::%(lineno)d] %(message)s',
     datefmt='%d/%b/%Y %H:%M:%S' )
 log = logging.getLogger( '__name__' )
@@ -233,33 +233,6 @@ class SourceDictMaker:
         print(f'number of duplicates: {num_duplicates_all}')
         return final_dict
 
-    # def _dictify_data( self, source_list ):
-    #     """ Takes raw bell list of dict_data, returns accession-number dict. """
-    #     accession_number_dict = {}
-    #     num_duplicates = 0
-    #     for entry in source_list:
-    #         if entry['calc_accession_id']:  # handles a null entry
-    #             accession_num = entry['calc_accession_id'].strip()
-    #             if accession_num in accession_number_dict:
-    #                 #print out the error, with the information about what's duplicated
-    #                 #don't raise an exception, because we want to find all the duplicates in one run
-    #                 print(f'duplicate accession number: "{accession_num}"')
-    #                 print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
-    #                 print(f'  object_id: {accession_number_dict[accession_num]["object_id"]}; title: {accession_number_dict[accession_num]["object_title"]}')
-    #                 num_duplicates += 1
-    #             accession_number_dict[accession_num] = entry
-    #         else:
-    #             print(f'no accession number for record')
-    #             print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
-    #     final_dict = {
-    #       'count': len( accession_number_dict.items() ),
-    #       'datetime': str( datetime.datetime.now() ),
-    #       'items': accession_number_dict }
-    #     print(f'Total records in DB: {len(source_list)}')
-    #     print(f'Valid items: {final_dict["count"]}')
-    #     print(f'number of duplicates: {num_duplicates}')
-    #     return final_dict
-
     def _save_json( self, result_list, JSON_OUTPUT_PATH ):
         ''' Saves the list of item-dicts to .json file. '''
         json_string = json.dumps( result_list, indent=2, sort_keys=True )
@@ -271,7 +244,7 @@ class SourceDictMaker:
     
 
 if __name__ == '__main__':
-    log.debug( 'starting dundermain' )
+    log.info( 'starting dundermain' )
     start_time = datetime.datetime.now()
     ## get args -----------------------------------------------------
     parser = argparse.ArgumentParser( description='expects source-xml-path, and output-json-path.' )
@@ -284,4 +257,4 @@ if __name__ == '__main__':
     maker = SourceDictMaker()
     maker.convert_fmproxml_to_json( FMPRO_XML_PATH, JSON_OUTPUT_PATH )
     elapsed_time = datetime.datetime.now() - start_time
-    log.debug( 'ending dundermain; elapsed_time, ``%s``' % elapsed_time )
+    log.info( 'ending dundermain; elapsed_time, ``%s``' % elapsed_time )
