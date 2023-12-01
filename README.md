@@ -2,12 +2,12 @@
 
 Code we can use to experiment with parsing hall-hoag xml. 
 
-All 'usage' notes below assume a virtual-environment has been activated.
+'Usage' notes below assume a virtual-environment has been activated.
 
 ---
 
 
-### convert_fmproxml_to_json.py
+## convert_fmproxml_to_json.py
 
 Converts exported filemaker-pro xml to json.
 
@@ -30,13 +30,24 @@ Usage:
 ---
 
 
-### unique_orgs.py
+## unique_orgs.py
 
 Goes through exported xml and lists unique organizations, with an item-count for each. Note that the 'items' appear to be boxes.
 
 Usage:
 ```
 (venv) $ python ./unique_orgs.py --input_path "/path/to/source.xml"
+```
+
+## pretty_print.py
+
+Simply takes the raw filemaker-pro export (which is all on one or two lines), and formats it.
+
+Note: Automatically outputs the formatted-file in the same directory, with the filename "original_filename_formatted.xml"
+
+Usage:
+```
+(no venv needed) $ python ./pretty_print.py --input_path "/path/to/source.xml"
 ```
 
 ---

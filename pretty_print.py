@@ -45,7 +45,7 @@ def make_output_path( input_path: str ):
 
 if __name__ == '__main__':
     ## set up argparser
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser( description='Formats xml.' )
     parser.add_argument('--input_path', type=str, help='Path to the input file')
     args = parser.parse_args()
     log.debug( f'args: {args}' )
