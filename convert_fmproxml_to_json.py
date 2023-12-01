@@ -221,6 +221,7 @@ class SourceDictMaker:
                     num_duplicates += 1
                     random_num = random.randint(1000, 9999)
                     temp_rec_num = f'{rec_num}_{random_num}'
+                    rec_num_dict[temp_rec_num] = entry
                 else:
                     rec_num_dict[rec_num] = entry
             else:
