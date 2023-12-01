@@ -19,6 +19,7 @@ class SourceDictMaker:
     def __init__( self ):
         self.NAMESPACE = { 'default': 'http://www.filemaker.com/fmpxmlresult' }
         self.expected_column_count = 24  # as of 2023-11-10 export 
+        self.instantiation_datetime = datetime.datetime.now()
 
     def convert_fmproxml_to_json(
         self, FMPRO_XML_PATH, JSON_OUTPUT_PATH ):
@@ -250,7 +251,6 @@ class SourceDictMaker:
     def _dictify_data( self, source_list ):
         """ Takes raw bell list of dict_data, returns accession-number dict. """
         rec_num_dict = {}
-        num_duplicates = 0
         for i, entry in enumerate( source_list ):
             if i % 1000 == 0:
                 log.debug(f'i, `{i}`')
@@ -262,7 +262,6 @@ class SourceDictMaker:
                     print(f'duplicate accession number: "{rec_num}"')
                     # print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
                     # print(f'  object_id: {rec_num_dict[rec_num]["object_id"]}; title: {rec_num_dict[rec_num]["object_title"]}')
-                    num_duplicates += 1
                     random_num = random.randint(1000, 9999)
                     temp_rec_num = f'{rec_num}___{random_num}'
                     rec_num_dict[temp_rec_num] = entry
@@ -270,15 +269,38 @@ class SourceDictMaker:
                     rec_num_dict[rec_num] = entry
             else:
                 log.info( f'no rec_num for entry, ``{pprint.pformat(entry)}``' )
-                # print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+
+        ## capture duplicates
+        seen = set()
+        duplicates = []
+        for key, value in rec_num_dict.items():
+            record_id = value.get("Record ID")
+            if record_id is not None:
+                if record_id in seen:
+                    duplicates.append(record_id)
+                else:
+                    seen.add(record_id)
+        log.debug( f'duplicates, ``{duplicates}``' )
+        
         final_dict = {
-          'count': len( rec_num_dict.items() ),
-          'datetime': str( datetime.datetime.now() ),
-          'items': rec_num_dict }
-        print(f'Total records in DB: {len(source_list)}')
-        print(f'Valid items: {final_dict["count"]}')
-        print(f'number of duplicates: {num_duplicates}')
+            '__meta__': {
+                'count': len( rec_num_dict.items() ),
+                'duplicates': duplicates,
+                'duplicates_count': len(duplicates),
+                'timestamp': str( datetime.datetime.now() ),
+                'time_elapsed': str( datetime.datetime.now() - self.instantiation_datetime )
+            },
+            'items': rec_num_dict 
+        }
+        log.debug( f'Total records in DB: {len(rec_num_dict.items())}' )
+        log.debug( f'number of duplicates: {len(duplicates)}' )
         return final_dict
+    
+
+
+
+
+
 
     # def _dictify_data( self, source_list ):
     #     """ Takes raw bell list of dict_data, returns accession-number dict. """
