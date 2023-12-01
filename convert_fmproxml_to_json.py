@@ -18,7 +18,7 @@ class SourceDictMaker:
 
     def __init__( self ):
         self.NAMESPACE = { 'default': 'http://www.filemaker.com/fmpxmlresult' }
-        self.expected_column_count = 24  # as of 2023-11-10 export
+        self.expected_column_count = 24  # as of 2023-11-10 export 
 
     def convert_fmproxml_to_json(
         self, FMPRO_XML_PATH, JSON_OUTPUT_PATH ):
@@ -112,6 +112,9 @@ class SourceDictMaker:
         rows = XML_DOC.xpath( xpath, namespaces=(NAMESPACE) )
         assert type(rows) == list, type(rows)
         sample_element = rows[0]
+        log.debug( f'sample_element, ``{pprint.pformat(sample_element)}``' )
+        ## print the xml for the first row
+        log.debug( etree.tostring(sample_element, pretty_print=True) )  # type: ignore
         assert type(sample_element) == lxml.etree._Element, type(sample_element)  # type: ignore
         return rows
 
@@ -120,30 +123,71 @@ class SourceDictMaker:
             Calls _make_data_dict() helper. '''
         result_list = []
         for i,row in enumerate(xml_doc_rows):
-          ## get columns (fixed number of columns per row)
-          xpath = 'default:COL'
-          columns = row.xpath( xpath, namespaces=(NAMESPACE) )
-          assert len(columns) == self.expected_column_count, len(columns)
-          ## get data_elements (variable number per column)
-          item_dict = self._makeDataDict( columns, NAMESPACE, dict_keys )
-          result_list.append( item_dict )  # if i > 5: break
+            # log.debug( f'row, ``{pprint.pformat(row)}``' )
+            ## pull out the <ROW MODID and RECORDID attributes
+            # log.debug( f'row.attrib, ``{pprint.pformat(row.attrib)}``' )
+            row_MODID = row.attrib['MODID']
+            row_RECORDID = row.attrib['RECORDID']
+            # log.debug( f'row.attrib["RECORDID"], ``{pprint.pformat(row.attrib["RECORDID"])}' )
+            # log.debug( f'row.attrib["MODID"], ``{pprint.pformat(row.attrib["MODID"])}' )
+            # 1/0
+            ## get columns (fixed number of columns per row)
+            xpath = 'default:COL'
+            columns = row.xpath( xpath, namespaces=(NAMESPACE) )
+            assert len(columns) == self.expected_column_count, len(columns)
+            ## get data_elements (variable number per column)
+            item_dict = self._makeDataDict( columns, NAMESPACE, dict_keys, row_MODID, row_RECORDID )
+            result_list.append( item_dict )  # if i > 5: break
         return result_list
 
-    def _makeDataDict( self, columns, NAMESPACE, keys ):
+    # def _process_rows( self, xml_doc_rows, NAMESPACE, dict_keys ):
+    #     ''' Returns list of item dictionaries.
+    #         Calls _make_data_dict() helper. '''
+    #     result_list = []
+    #     for i,row in enumerate(xml_doc_rows):
+    #       ## get columns (fixed number of columns per row)
+    #       xpath = 'default:COL'
+    #       columns = row.xpath( xpath, namespaces=(NAMESPACE) )
+    #       assert len(columns) == self.expected_column_count, len(columns)
+    #       ## get data_elements (variable number per column)
+    #       item_dict = self._makeDataDict( columns, NAMESPACE, dict_keys )
+    #       result_list.append( item_dict )  # if i > 5: break
+    #     return result_list
+
+    def _makeDataDict( self, columns, NAMESPACE, keys, row_MODID: str, row_RECORDID: str ):
         ''' Returns info-dict for a single item; eg { 'artist_first_name': 'andy', 'artist_last_name': 'warhol' }
             Called by: _process_rows()
             Calls: self.__run_asserts(), self.__handle_single_element(), self.__handle_multiple_elements() '''
         self.__run_asserts( columns, keys )
-        xpath = 'default:DATA'; d_dict = {}  # setup
+        ## setup ----------------------------------------------------
+        xpath = 'default:DATA'
+        d_dict = { 'row_MODID': row_MODID, 'row_RECORDID': row_RECORDID }  
         for i,column in enumerate(columns):
             data = column.xpath( xpath, namespaces=(NAMESPACE) )  # type(data) always a list, but of an empty, a single or multiple elements?
             if len(data) == 0:    # eg <COL(for artist-firstname)></COL>
-                d_dict[ keys[i] ] = None
+                d_dict[ keys[i] ] = None  # type: ignore
             elif len(data) == 1:  # eg <COL(for artist-firstname)><DATA>'artist_firstname'</DATA></COL>
-                d_dict[ keys[i] ] = self.__handle_single_element( data, keys[i] )
+                d_dict[ keys[i] ] = self.__handle_single_element( data, keys[i] )  # type: ignore
             else:                 # eg <COL(for artist-firstname)><DATA>'artist_a_firstname'</DATA><DATA>'artist_b_firstname'</DATA></COL>
-                d_dict[ keys[i] ] = self.__handle_multiple_elements( data, keys[i] )
+                d_dict[ keys[i] ] = self.__handle_multiple_elements( data, keys[i] )  # type: ignore
+        # log.debug( f'd_dict, ``{pprint.pformat(d_dict)}``' )
         return d_dict
+
+    # def _makeDataDict( self, columns, NAMESPACE, keys ):
+    #     ''' Returns info-dict for a single item; eg { 'artist_first_name': 'andy', 'artist_last_name': 'warhol' }
+    #         Called by: _process_rows()
+    #         Calls: self.__run_asserts(), self.__handle_single_element(), self.__handle_multiple_elements() '''
+    #     self.__run_asserts( columns, keys )
+    #     xpath = 'default:DATA'; d_dict = {}  # setup
+    #     for i,column in enumerate(columns):
+    #         data = column.xpath( xpath, namespaces=(NAMESPACE) )  # type(data) always a list, but of an empty, a single or multiple elements?
+    #         if len(data) == 0:    # eg <COL(for artist-firstname)></COL>
+    #             d_dict[ keys[i] ] = None
+    #         elif len(data) == 1:  # eg <COL(for artist-firstname)><DATA>'artist_firstname'</DATA></COL>
+    #             d_dict[ keys[i] ] = self.__handle_single_element( data, keys[i] )
+    #         else:                 # eg <COL(for artist-firstname)><DATA>'artist_a_firstname'</DATA><DATA>'artist_b_firstname'</DATA></COL>
+    #             d_dict[ keys[i] ] = self.__handle_multiple_elements( data, keys[i] )
+    #     return d_dict
 
     def __run_asserts( self, columns, keys ):
         ''' Documents the inputs.
@@ -194,9 +238,9 @@ class SourceDictMaker:
     def _normalize_value_types( self, key_type_dict, result_list ):
         ''' Determines stable type for each field. '''
         updated_result_list = []
-        assert len( key_type_dict.keys() ) == self.expected_column_count
+        assert len( key_type_dict.keys() ) == self.expected_column_count + 2, len( key_type_dict.keys() )  # +2 for row_MODID and row_RECORDID
         for entry_dict in result_list:
-          assert len( entry_dict.keys() ) == self.expected_column_count
+          assert len( entry_dict.keys() ) == self.expected_column_count +2, len( entry_dict.keys() )  # +2 for row_MODID and row_RECORDID
           for key, val in entry_dict.items():
             if key_type_dict[key] == list and ( type(val) == str or val == None ) :
               entry_dict[key] = [ val ]
@@ -210,8 +254,8 @@ class SourceDictMaker:
         for i, entry in enumerate( source_list ):
             if i % 1000 == 0:
                 log.debug(f'i, `{i}`')
-            if entry['Record ID']:  # handles a null entry
-                rec_num = entry['Record ID'].strip()
+            if entry['row_RECORDID']:  # handles a null entry
+                rec_num = entry['row_RECORDID'].strip()
                 if rec_num in rec_num_dict:
                     #print out the error, with the information about what's duplicated
                     #don't raise an exception, because we want to find all the duplicates in one run
@@ -235,6 +279,39 @@ class SourceDictMaker:
         print(f'Valid items: {final_dict["count"]}')
         print(f'number of duplicates: {num_duplicates}')
         return final_dict
+
+    # def _dictify_data( self, source_list ):
+    #     """ Takes raw bell list of dict_data, returns accession-number dict. """
+    #     rec_num_dict = {}
+    #     num_duplicates = 0
+    #     for i, entry in enumerate( source_list ):
+    #         if i % 1000 == 0:
+    #             log.debug(f'i, `{i}`')
+    #         if entry['Record ID']:  # handles a null entry
+    #             rec_num = entry['Record ID'].strip()
+    #             if rec_num in rec_num_dict:
+    #                 #print out the error, with the information about what's duplicated
+    #                 #don't raise an exception, because we want to find all the duplicates in one run
+    #                 print(f'duplicate accession number: "{rec_num}"')
+    #                 # print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+    #                 # print(f'  object_id: {rec_num_dict[rec_num]["object_id"]}; title: {rec_num_dict[rec_num]["object_title"]}')
+    #                 num_duplicates += 1
+    #                 random_num = random.randint(1000, 9999)
+    #                 temp_rec_num = f'{rec_num}___{random_num}'
+    #                 rec_num_dict[temp_rec_num] = entry
+    #             else:
+    #                 rec_num_dict[rec_num] = entry
+    #         else:
+    #             log.info( f'no rec_num for entry, ``{pprint.pformat(entry)}``' )
+    #             # print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+    #     final_dict = {
+    #       'count': len( rec_num_dict.items() ),
+    #       'datetime': str( datetime.datetime.now() ),
+    #       'items': rec_num_dict }
+    #     print(f'Total records in DB: {len(source_list)}')
+    #     print(f'Valid items: {final_dict["count"]}')
+    #     print(f'number of duplicates: {num_duplicates}')
+    #     return final_dict
 
     # def _dictify_data( self, source_list ):
     #     """ Takes raw bell list of dict_data, returns accession-number dict. """
