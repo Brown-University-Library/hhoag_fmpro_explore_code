@@ -287,6 +287,7 @@ class SourceDictMaker:
                 'count': len( rec_num_dict.items() ),
                 'duplicates': duplicates,
                 'duplicates_count': len(duplicates),
+                'duplicates_explanation': 'duplicates are from the field "Record ID" (which is different from the unique "RECORDID" <ROW> attribute and which is visible in the item-dict as "row_RECORDID")'
                 'timestamp': str( datetime.datetime.now() ),
                 'time_elapsed': str( datetime.datetime.now() - self.instantiation_datetime )
             },
