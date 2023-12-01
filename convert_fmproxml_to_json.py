@@ -1,10 +1,10 @@
-import argparse, datetime, json, logging, os, pprint
+import argparse, datetime, json, logging, os, pprint, random
 import lxml
 from lxml import etree
 
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='[%(asctime)s] %(levelname)s [%(module)s-%(funcName)s()::%(lineno)d] %(message)s',
     datefmt='%d/%b/%Y %H:%M:%S' )
 log = logging.getLogger( '__name__' )
@@ -30,37 +30,41 @@ class SourceDictMaker:
                    # } """
         #Get data
         #Purpose: gets raw filemaker-pro xml unicode-string from gist
+        log.info( 'getting data' )
         unicode_xml_string = self._get_data( FMPRO_XML_PATH )
         #
         #Docify xml string
         #Purpose: converts unicode-string to <type 'lxml.etree._Element'>
+        log.info( 'docifying xml' )
         XML_DOC = self._docify_xml( unicode_xml_string)
         #
         #Make key list
         #Purpose: creates list of keys that will be used for each item-dict
         #Example returned data: [ 'object_id', 'object_title', 'object_date', etc. ]
+        log.info( 'making dict-keys' )
         dict_keys = self._make_dict_keys( XML_DOC, self.NAMESPACE )
         #
         #Make list of doc-items
         #Purpose: creates list of xml-doc items
+        log.info( 'making xml-doc rows' )
         xml_doc_rows = self._get_xml_doc_rows( XML_DOC, self.NAMESPACE )
         #
         #Make initial dict-list
         #Purpose: creates initial list of dict-items. For a given key, the value-type may vary by item.
         #Example returned data: [ {'artist_alias': 'abc', 'artist_birth_country_id': '123', etc.}, {etc.}, ... ]
-        log.info( 'about to make initial dict-list' )
+        log.info( 'making initial dict-list' )
         result_list = self._process_rows( xml_doc_rows, self.NAMESPACE, dict_keys )
         #
         #Make key-type dict
         #Purpose: creats dict of key-name:key-type; all data examined to see which keys should have list vs unicode-string values.
         #Example returned data: [  {'ARTISTS::calc_nationality': <type 'list'>, 'ARTISTS::use_alias_flag': <type 'unicode'>, etc.} ]
-        log.info( 'about to make key-type dict' )
+        log.info( 'making key-type dict' )
         key_type_dict = self._make_key_type_dict( result_list )
         #
         #Normalize dict-values
         #Purpose: creates final list of dict-items. For a given key, the value-type will _not_ vary by item.
         #Example returned data: [ {'artist_alias': ['abc'], 'artist_birth_country_id': ['123'], etc.}, {etc.}, ... ]
-        log.info( 'about to normalize dict-values' )
+        log.info( 'normalizing dict-values' )
         result_list = self._normalize_value_types( key_type_dict, result_list )
         #
         #Dictify item-list
@@ -68,11 +72,11 @@ class SourceDictMaker:
         #Example returned data: { count:5000,
                               #   items:{ accnum_1:{artist:abc, title:def}, accnum_2:{etc.}, etc. }
                               # }
-        log.info( 'about to dictify item-list' )
+        log.info( 'dictifying data' )
         dictified_data = self._dictify_data( result_list )
         #
         #Output json
-        log.info( 'about to save json' )
+        log.info( 'saving json' )
         self._save_json( dictified_data, JSON_OUTPUT_PATH )
 
     def _get_data( self, FMPRO_XML_PATH ):
@@ -87,12 +91,12 @@ class SourceDictMaker:
         byte_string = unicode_xml_string.encode('utf-8', 'replace')
         parser = etree.XMLParser()
         XML_DOC = etree.fromstring( byte_string, parser )  # str required because xml contains an encoding declaration
-        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)  # type: ignore  
+        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)  # type: ignore
         return XML_DOC
 
     def _make_dict_keys( self, XML_DOC, NAMESPACE ):
         ''' Returns list of field names; they'll later become keys in each item-dict. '''
-        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)  # type: ignore
+        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)
         xpath = '/default:FMPXMLRESULT/default:METADATA/default:FIELD'
         elements = XML_DOC.xpath( xpath, namespaces=(NAMESPACE) )
         dict_keys = []
@@ -103,12 +107,12 @@ class SourceDictMaker:
 
     def _get_xml_doc_rows( self, XML_DOC, NAMESPACE ):
         ''' Returns list of item docs. '''
-        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)  # type: ignore
+        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)
         xpath = '/default:FMPXMLRESULT/default:RESULTSET/default:ROW'
         rows = XML_DOC.xpath( xpath, namespaces=(NAMESPACE) )
         assert type(rows) == list, type(rows)
         sample_element = rows[0]
-        assert type(sample_element) == lxml.etree._Element, type(sample_element)  # type: ignore
+        assert type(sample_element) == lxml.etree._Element, type(sample_element)
         return rows
 
     def _process_rows( self, xml_doc_rows, NAMESPACE, dict_keys ):
@@ -145,7 +149,7 @@ class SourceDictMaker:
         ''' Documents the inputs.
             Called by _makeDataDict() '''
         assert type(columns) == list, type(columns)
-        assert type(columns[0]) == lxml.etree._Element, type(columns[0])  # type: ignore
+        assert type(columns[0]) == lxml.etree._Element, type(columns[0])
         assert type(keys) == list, type(keys)
         return
 
@@ -200,44 +204,61 @@ class SourceDictMaker:
         return updated_result_list
 
     def _dictify_data( self, source_list ):
-        """ Takes raw list of dict_data, returns hall-hoag item-number dict. 
-            (Note that item-numbers here appear to be box-numbers.) """
-        log.debug( f'source_list, ``{pprint.pformat(source_list)}``' )
-        rec_number_dict = {}
-        num_duplicates_all = 0
+        """ Takes raw bell list of dict_data, returns accession-number dict. """
+        accession_number_dict = {}
+        num_duplicates = 0
         for entry in source_list:
-            log.debug( f'entry, ``{pprint.pformat(entry)}``' )
-            if entry['Record ID']:  # handles a null entry
-                log.debug( 'entry has "Record ID"' )
-                log.info( f'processing record-id, ``{entry["Record ID"]}``' )
-                rec_num = entry['Record ID'].strip()
-                log.debug( f'rec_num, ``{rec_num}``' )
-                if rec_num in rec_number_dict:
-                    log.debug( 'rec_num already in rec_number_dict, so appending' )
-                    rec_number_dict[rec_num]['items'].append( entry )
+            if entry['calc_accession_id']:  # handles a null entry
+                accession_num = entry['calc_accession_id'].strip()
+                if accession_num in accession_number_dict:
                     #print out the error, with the information about what's duplicated
                     #don't raise an exception, because we want to find all the duplicates in one run
-                    print(f'duplicate rec_num: "{rec_num}"')
-                    # print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
-                    # print(f'  object_id: {rec_number_dict[rec_num]["object_id"]}; title: {rec_number_dict[rec_num]["object_title"]}')
-                    num_duplicates_all += 1
-                    rec_number_dict[rec_num]['count'] += 1
+                    print(f'duplicate accession number: "{accession_num}"')
+                    print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+                    print(f'  object_id: {accession_number_dict[accession_num]["object_id"]}; title: {accession_number_dict[accession_num]["object_title"]}')
+                    num_duplicates += 1
+                    random_num = random.randint(1000, 9999)
+                    temp_accession_num = f'{accession_num}_{random_num}'
                 else:
-                    log.debug( 'rec_num not already in rec_number_dict, so adding it' )
-                    log.debug( f'rec_num_dict, ``{pprint.pformat(rec_number_dict)}``' )
-                    new_dict = {'count': 1, 'items': [entry]}
-                    rec_number_dict[rec_num] = new_dict
+                    accession_number_dict[accession_num] = entry
             else:
-                print(f'no rec_num for entry, ``{entry}``')
-
+                print(f'no accession number for record')
+                print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
         final_dict = {
-          'count': len( rec_number_dict.items() ),
+          'count': len( accession_number_dict.items() ),
           'datetime': str( datetime.datetime.now() ),
-          'items': rec_number_dict }
+          'items': accession_number_dict }
         print(f'Total records in DB: {len(source_list)}')
         print(f'Valid items: {final_dict["count"]}')
-        print(f'number of duplicates: {num_duplicates_all}')
+        print(f'number of duplicates: {num_duplicates}')
         return final_dict
+
+    # def _dictify_data( self, source_list ):
+    #     """ Takes raw bell list of dict_data, returns accession-number dict. """
+    #     accession_number_dict = {}
+    #     num_duplicates = 0
+    #     for entry in source_list:
+    #         if entry['calc_accession_id']:  # handles a null entry
+    #             accession_num = entry['calc_accession_id'].strip()
+    #             if accession_num in accession_number_dict:
+    #                 #print out the error, with the information about what's duplicated
+    #                 #don't raise an exception, because we want to find all the duplicates in one run
+    #                 print(f'duplicate accession number: "{accession_num}"')
+    #                 print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+    #                 print(f'  object_id: {accession_number_dict[accession_num]["object_id"]}; title: {accession_number_dict[accession_num]["object_title"]}')
+    #                 num_duplicates += 1
+    #             accession_number_dict[accession_num] = entry
+    #         else:
+    #             print(f'no accession number for record')
+    #             print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+    #     final_dict = {
+    #       'count': len( accession_number_dict.items() ),
+    #       'datetime': str( datetime.datetime.now() ),
+    #       'items': accession_number_dict }
+    #     print(f'Total records in DB: {len(source_list)}')
+    #     print(f'Valid items: {final_dict["count"]}')
+    #     print(f'number of duplicates: {num_duplicates}')
+    #     return final_dict
 
     def _save_json( self, result_list, JSON_OUTPUT_PATH ):
         ''' Saves the list of item-dicts to .json file. '''
