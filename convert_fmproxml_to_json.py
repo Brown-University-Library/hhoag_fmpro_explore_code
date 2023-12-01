@@ -207,9 +207,11 @@ class SourceDictMaker:
         """ Takes raw bell list of dict_data, returns accession-number dict. """
         accession_number_dict = {}
         num_duplicates = 0
-        for entry in source_list:
-            if entry['calc_accession_id']:  # handles a null entry
-                accession_num = entry['calc_accession_id'].strip()
+        for i, entry in enumerate( source_list ):
+            if i % 1000 == 0:
+                log.debug(f'i, `{i}`')
+            if entry['Record ID']:  # handles a null entry
+                accession_num = entry['Record ID'].strip()
                 if accession_num in accession_number_dict:
                     #print out the error, with the information about what's duplicated
                     #don't raise an exception, because we want to find all the duplicates in one run
