@@ -205,31 +205,31 @@ class SourceDictMaker:
 
     def _dictify_data( self, source_list ):
         """ Takes raw bell list of dict_data, returns accession-number dict. """
-        accession_number_dict = {}
+        rec_num_dict = {}
         num_duplicates = 0
         for i, entry in enumerate( source_list ):
             if i % 1000 == 0:
                 log.debug(f'i, `{i}`')
             if entry['Record ID']:  # handles a null entry
-                accession_num = entry['Record ID'].strip()
-                if accession_num in accession_number_dict:
+                rec_num = entry['Record ID'].strip()
+                if rec_num in rec_num_dict:
                     #print out the error, with the information about what's duplicated
                     #don't raise an exception, because we want to find all the duplicates in one run
-                    print(f'duplicate accession number: "{accession_num}"')
-                    print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
-                    print(f'  object_id: {accession_number_dict[accession_num]["object_id"]}; title: {accession_number_dict[accession_num]["object_title"]}')
+                    print(f'duplicate accession number: "{rec_num}"')
+                    # print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+                    # print(f'  object_id: {rec_num_dict[rec_num]["object_id"]}; title: {rec_num_dict[rec_num]["object_title"]}')
                     num_duplicates += 1
                     random_num = random.randint(1000, 9999)
-                    temp_accession_num = f'{accession_num}_{random_num}'
+                    temp_rec_num = f'{rec_num}_{random_num}'
                 else:
-                    accession_number_dict[accession_num] = entry
+                    rec_num_dict[rec_num] = entry
             else:
-                print(f'no accession number for record')
-                print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
+                log.info( f'no rec_num for entry, ``{}``' )
+                # print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
         final_dict = {
-          'count': len( accession_number_dict.items() ),
+          'count': len( rec_num_dict.items() ),
           'datetime': str( datetime.datetime.now() ),
-          'items': accession_number_dict }
+          'items': rec_num_dict }
         print(f'Total records in DB: {len(source_list)}')
         print(f'Valid items: {final_dict["count"]}')
         print(f'number of duplicates: {num_duplicates}')
