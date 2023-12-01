@@ -13,7 +13,7 @@ Converts exported filemaker-pro xml to json.
 
 The exported filemaker-pro xml is hard to read because, like a CSV, it has a 'row' of headings; the rest is data. And all data-elements are bounded simply by the `<DATA>` element, so it's hard to work with programmatically. This turns the exported data into nicely-viewable, and programmatically accessible, key-value pairs.
 
-Though the meat of the output is the 'items' data, the output-dict has a __meta__ key, containing potentially useful info such as the number-of-items, and duplicate "Record ID" info.
+Though the meat of the output is the 'items' data, the output-dict has a `__meta__` key, containing potentially useful info such as the number-of-items, and duplicate "Record ID" info.
 
 Usage:
 ```
