@@ -96,7 +96,7 @@ class SourceDictMaker:
 
     def _make_dict_keys( self, XML_DOC, NAMESPACE ):
         ''' Returns list of field names; they'll later become keys in each item-dict. '''
-        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)
+        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)  # type: ignore
         xpath = '/default:FMPXMLRESULT/default:METADATA/default:FIELD'
         elements = XML_DOC.xpath( xpath, namespaces=(NAMESPACE) )
         dict_keys = []
@@ -107,12 +107,12 @@ class SourceDictMaker:
 
     def _get_xml_doc_rows( self, XML_DOC, NAMESPACE ):
         ''' Returns list of item docs. '''
-        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)
+        assert type(XML_DOC) == lxml.etree._Element, type(XML_DOC)  # type: ignore
         xpath = '/default:FMPXMLRESULT/default:RESULTSET/default:ROW'
         rows = XML_DOC.xpath( xpath, namespaces=(NAMESPACE) )
         assert type(rows) == list, type(rows)
         sample_element = rows[0]
-        assert type(sample_element) == lxml.etree._Element, type(sample_element)
+        assert type(sample_element) == lxml.etree._Element, type(sample_element)  # type: ignore
         return rows
 
     def _process_rows( self, xml_doc_rows, NAMESPACE, dict_keys ):
@@ -149,7 +149,7 @@ class SourceDictMaker:
         ''' Documents the inputs.
             Called by _makeDataDict() '''
         assert type(columns) == list, type(columns)
-        assert type(columns[0]) == lxml.etree._Element, type(columns[0])
+        assert type(columns[0]) == lxml.etree._Element, type(columns[0])  # type: ignore
         assert type(keys) == list, type(keys)
         return
 
@@ -224,7 +224,7 @@ class SourceDictMaker:
                 else:
                     rec_num_dict[rec_num] = entry
             else:
-                log.info( f'no rec_num for entry, ``{}``' )
+                log.info( f'no rec_num for entry, ``{pprint.pformat(entry)}``' )
                 # print(f'  object_id: {entry["object_id"]}; title: {entry["object_title"]}')
         final_dict = {
           'count': len( rec_num_dict.items() ),
