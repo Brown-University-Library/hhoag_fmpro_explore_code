@@ -220,7 +220,7 @@ class SourceDictMaker:
                     # print(f'  object_id: {rec_num_dict[rec_num]["object_id"]}; title: {rec_num_dict[rec_num]["object_title"]}')
                     num_duplicates += 1
                     random_num = random.randint(1000, 9999)
-                    temp_rec_num = f'{rec_num}_{random_num}'
+                    temp_rec_num = f'{rec_num}___{random_num}'
                     rec_num_dict[temp_rec_num] = entry
                 else:
                     rec_num_dict[rec_num] = entry
