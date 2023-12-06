@@ -37,7 +37,8 @@ def make_csv_from_fmpro_json( input_path: str ) -> None:
     validate_keys_same( rows_list )  # raises exception if keys differ
     validate_organization_id( rows_list )  # raises exception if org-id not found or is a list, or has a length of zero
     ## make subset list ---------------------------------------------
-    # subset_rows_list: list = make_subset_list( rows_list, sorted_target_orgs )
+    subset_rows_list: list = make_subset_list( rows_list, sorted_target_orgs )
+    sorted_data: list = sort_dicts_by_key( subset_rows_list, 'Organization ID' )
     ## make tsv file ------------------------------------------------
     write_tsv( subset_rows_list )
     return
@@ -56,18 +57,6 @@ def make_starting_orgs_list() -> list:
         target_orgs.append( updated_org_id )
     log.debug( f'target_orgs[0:10], ``{pprint.pformat(target_orgs[0:10])}``' )
     return target_orgs
-
-
-def make_subset_list( rows_list: list, sorted_target_orgs: list ) -> list:
-    """ Makes a subset list of dicts -- for those dicts where the `Organization ID` value is in `sorted_target_orgs`.
-        Called by make_csv_from_fmpro_json() """
-    subset_rows_list: list = []
-    for row_data_dct in rows_list:
-        org_id: str = row_data_dct['Organization ID']
-        if org_id in sorted_target_orgs:
-            subset_rows_list.append( row_data_dct )
-    log.debug( f'subset_rows_list[0:10], ``{pprint.pformat(subset_rows_list[0:10])}``' )
-    return subset_rows_list
 
 
 def validate_no_tabs( rows_list: list ) -> None:
@@ -155,12 +144,33 @@ def validate_organization_id( rows_list: list ) -> None:
     return
 
 
+def make_subset_list( rows_list: list, sorted_target_orgs: list ) -> list:
+    """ Makes a subset list of dicts -- for those dicts where the `Organization ID` value is in `sorted_target_orgs`.
+        Called by make_csv_from_fmpro_json() """
+    subset_rows_list: list = []
+    for row_data_dct in rows_list:
+        org_id: str = row_data_dct['Organization ID']
+        if org_id in sorted_target_orgs:
+            subset_rows_list.append( row_data_dct )
+    log.debug( f'subset_rows_list[0:10], ``{pprint.pformat(subset_rows_list[0:10])}``' )
+    return subset_rows_list
+
+
+def sort_dicts_by_key( rows_list: list, key: str ) -> list:
+    """ Sorts a list of dicts by the given key.
+        Called by make_csv_from_fmpro_json() """
+    sorted_rows_list = sorted( rows_list, key=lambda k: k[key] )
+    log.debug( f'sorted_rows_list[0:10], ``{pprint.pformat(sorted_rows_list[0:10])}``' )
+    return sorted_rows_list
+
+
 def write_tsv( rows_list: list ) -> None:
     """ Creates a TSV file from a list of dictionaries.
         Writes to file.
         Called by make_csv_from_fmpro_json() """
     ## make path ----------------------------------------------------
     iso_now_time: str = datetime.datetime.now().isoformat()
+    iso_now_time = iso_now_time.replace( ':', '-' )
     file_name: str = f'output_{iso_now_time}.tsv'
     file_path: str = f'../created_tsv_files/{file_name}'  # TODO -- take an output-path argument
     ## make and write file ------------------------------------------
