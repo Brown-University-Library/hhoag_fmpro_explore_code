@@ -6,6 +6,22 @@ Code we can use to experiment with parsing hall-hoag xml.
 
 ---
 
+## make_csv_100.py
+
+Takes the source json-file produced by `convert_fmproxml_to_json.py` and outputs a TSV file. In this case, it produces a subset of all the items in the json file due to a requirement to only produced data for a preset list of orgs.
+
+Notes
+- though a `csv` was specified, the data contains lots of commas, so after confirming the data doesn't contain tab-characters, I decided to produce a `tsv` file instead.
+- the output file will not overwrite previous output files -- because a timestamp is included in the filename.
+- TODO: the output file is hard-coded to go to a '../created_tsv_files/' dir; add an output-path argument.
+
+__Usage:__
+```
+(venv) $ python ./make_csv_100.py --input_path "/path/to/file.json"
+```
+
+---
+
 
 ## convert_fmproxml_to_json.py
 
@@ -17,14 +33,14 @@ Though the meat of the output is the 'items' data, the output-dict has a `__meta
 
 _(Note: this code is based on old [ball-gallery](https://github.com/Brown-University-Library/bell) code; some of the code-comments still reference that older code.)_
 
-Usage:
+__Usage:__
 ```
 (venv) $ python ./convert_fmproxml_to_json.py --input_path "/path/to/source.xml" --output_path "/path/to/output.json"
 ```
 
 `test_convert_xml.py` is a test for one of this file's functions.
 
-Usage:
+__Usage:__
 ```
 (venv) $ python ./test_convert_xml.py
 ```
@@ -36,10 +52,13 @@ Usage:
 
 Goes through exported xml and lists unique organizations, with an item-count for each. Note that the 'items' appear to be boxes.
 
-Usage:
+__Usage:__
 ```
 (venv) $ python ./unique_orgs.py --input_path "/path/to/source.xml"
 ```
+
+---
+
 
 ## pretty_print.py
 
@@ -47,7 +66,7 @@ Simply takes the raw filemaker-pro export (which is all on one or two lines), an
 
 Note: Automatically outputs the formatted-file in the same directory, with the filename "original_filename_formatted.xml"
 
-Usage:
+__Usage:__
 ```
 (no venv needed) $ python ./pretty_print.py --input_path "/path/to/source.xml"
 ```
