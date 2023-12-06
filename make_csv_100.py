@@ -38,9 +38,9 @@ def make_csv_from_fmpro_json( input_path: str ) -> None:
     validate_organization_id( rows_list )  # raises exception if org-id not found or is a list, or has a length of zero
     ## make subset list ---------------------------------------------
     subset_rows_list: list = make_subset_list( rows_list, sorted_target_orgs )
-    sorted_data: list = sort_dicts_by_key( subset_rows_list, 'Organization ID' )
+    sorted_subset_rows: list = sort_dicts_by_key( subset_rows_list, 'Organization ID' )
     ## make tsv file ------------------------------------------------
-    write_tsv( subset_rows_list )
+    write_tsv( sorted_subset_rows )
     return
 
 
