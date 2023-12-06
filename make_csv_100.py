@@ -1,4 +1,4 @@
-import argparse, csv, json, logging, os, pprint
+import argparse, csv, datetime, json, logging, os, pprint
 
 
 lglvl: str = os.environ.get( 'LOGLEVEL', 'DEBUG' )
@@ -36,18 +36,31 @@ def make_csv_from_fmpro_json( input_path: str ) -> None:
     validate_keys_same( rows_list )  # raises exception if keys differ
     ## make tsv file ------------------------------------------------
     write_tsv( rows_list )
-    
-    1/0
+    return
 
 
 ## helper functions -------------------------------------------------
 
 
 def write_tsv( rows_list: list ) -> None:
-
-        
-        pass
-
+    """ Creates a TSV file from a list of dictionaries.
+        Writes to file.
+        Called by make_csv_from_fmpro_json() """
+    ## make path ----------------------------------------------------
+    iso_now_time: str = datetime.datetime.now().isoformat()
+    file_name: str = f'output_{iso_now_time}.tsv'
+    file_path: str = f'../created_tsv_files/{file_name}'  # TODO -- take an output-path argument
+    ## make and write file ------------------------------------------
+    with open( file_path, 'w', newline='', encoding='utf-8' ) as file:
+        writer = csv.DictWriter( file, fieldnames=rows_list[0].keys(), delimiter='\t' )
+        writer.writeheader()
+        for row in rows_list:
+            for key in row:
+                if row[key] is None:
+                    row[key] = ''
+            writer.writerow(row)
+    log.debug( f'file written to file_path, ``{file_path}``' )
+    return
 
 def validate_no_tabs( rows_list: list ) -> None:
     """ Validates that there are no tab-characters in data.
@@ -87,9 +100,10 @@ def validate_keys_same( rows_list: list ) -> None:
             raise Exception( msg )
     else:
         log.debug( 'all items have the same keys.' )
+    return
 
 
-def contains_tab_character( value ):
+def contains_tab_character( value ) -> bool:
     """ Checks for tab-character in value, which can be a string or a list. 
         Called by validate_data_dicts() """
     assert type(value) in [ str, list ], type(value)
