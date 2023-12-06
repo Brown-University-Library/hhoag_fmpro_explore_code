@@ -1,5 +1,5 @@
 """
-Outputs number of unique organization-IDs.
+Outputs unique organization-IDs, with counts.
 Note: the count appears to be 'boxes' not 'items'.
 
 Usage:
@@ -79,7 +79,7 @@ def get_collection_info( source_filepath: str ) -> None:
 
 if __name__ == '__main__':
     ## set up argparser
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Outputs unique organization-IDs, with counts')
     parser.add_argument('--input_path', type=str, help='Path to the input file')
     args = parser.parse_args()
     log.debug( f'args: {args}' )
