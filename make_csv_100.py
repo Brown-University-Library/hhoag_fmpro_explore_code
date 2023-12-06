@@ -34,33 +34,56 @@ def make_csv_from_fmpro_json( input_path: str ) -> None:
     ## validate each data-dict --------------------------------------
     validate_no_tabs( rows_list )  # raises exception if tab-character found
     validate_keys_same( rows_list )  # raises exception if keys differ
+    validate_organization_id( rows_list )  # raises exception if org-id not found or is a list, or has a length of zero
+    ## make subset list ---------------------------------------------
+    # subset_rows_list: list = make_subset_list( rows_list, sorted_target_orgs )
     ## make tsv file ------------------------------------------------
-    write_tsv( rows_list )
+    write_tsv( subset_rows_list )
     return
 
 
-## helper functions -------------------------------------------------
+## helper functions START -------------------------------------------
 
-
-def write_tsv( rows_list: list ) -> None:
-    """ Creates a TSV file from a list of dictionaries.
-        Writes to file.
+def validate_organization_id( rows_list: list ) -> None:
+    """ Checks that each row has a valid organization-id.
+        Raises exception if org-id not found or is a list, or has a length of zero.
         Called by make_csv_from_fmpro_json() """
-    ## make path ----------------------------------------------------
-    iso_now_time: str = datetime.datetime.now().isoformat()
-    file_name: str = f'output_{iso_now_time}.tsv'
-    file_path: str = f'../created_tsv_files/{file_name}'  # TODO -- take an output-path argument
-    ## make and write file ------------------------------------------
-    with open( file_path, 'w', newline='', encoding='utf-8' ) as file:
-        writer = csv.DictWriter( file, fieldnames=rows_list[0].keys(), delimiter='\t' )
-        writer.writeheader()
-        for row in rows_list:
-            for key in row:
-                if row[key] is None:
-                    row[key] = ''
-            writer.writerow(row)
-    log.debug( f'file written to file_path, ``{file_path}``' )
+    validity_flag: bool = True
+    no_org_id_count: int = 0
+    for i, row_data_dct in enumerate( rows_list ):
+        org_id: str = row_data_dct['Organization ID']
+        if org_id == None:
+            # validity_flag = False
+            log.warning( f'no org_id found for row_data_dct, ``{row_data_dct}``' )
+            no_org_id_count += 1
+            continue
+        elif type(org_id) == list:
+            validity_flag = False
+        elif len(org_id) == 0:
+            validity_flag = False
+        if validity_flag == False:
+            msg = f'problem with org_id, ``{org_id}`` at index ``{i}``; exiting'
+            log.error( msg )
+            raise Exception( msg )
+    if no_org_id_count > 0:
+        log.warning( f'no_org_id_count, ``{no_org_id_count}``' )
+    else:
+        log.debug( 'good; the no_org_id_count is 0' )
+    log.debug( f'validity_flag, ``{validity_flag}``' )
     return
+
+
+def make_subset_list( rows_list: list, sorted_target_orgs: list ) -> list:
+    """ Makes a subset list of dicts -- for those dicts where the `Organization ID` value is in `sorted_target_orgs`.
+        Called by make_csv_from_fmpro_json() """
+    subset_rows_list: list = []
+    for row_data_dct in rows_list:
+        org_id: str = row_data_dct['Organization ID']
+        if org_id in sorted_target_orgs:
+            subset_rows_list.append( row_data_dct )
+    log.debug( f'subset_rows_list[0:10], ``{pprint.pformat(subset_rows_list[0:10])}``' )
+    return subset_rows_list
+
 
 def validate_no_tabs( rows_list: list ) -> None:
     """ Validates that there are no tab-characters in data.
@@ -118,8 +141,33 @@ def contains_tab_character( value ) -> bool:
     return False
 
 
+def write_tsv( rows_list: list ) -> None:
+    """ Creates a TSV file from a list of dictionaries.
+        Writes to file.
+        Called by make_csv_from_fmpro_json() """
+    ## make path ----------------------------------------------------
+    iso_now_time: str = datetime.datetime.now().isoformat()
+    file_name: str = f'output_{iso_now_time}.tsv'
+    file_path: str = f'../created_tsv_files/{file_name}'  # TODO -- take an output-path argument
+    ## make and write file ------------------------------------------
+    with open( file_path, 'w', newline='', encoding='utf-8' ) as file:
+        writer = csv.DictWriter( file, fieldnames=rows_list[0].keys(), delimiter='\t' )
+        writer.writeheader()
+        for row in rows_list:
+            for key in row:
+                if row[key] is None:
+                    row[key] = ''
+            writer.writerow(row)
+    log.debug( f'file written to file_path, ``{file_path}``' )
+    return
 
-## hardcoded org single string (from google-sheet)
+
+## helper functions END ---------------------------------------------
+
+
+## hardcoded org single string (from google-sheet) ------------------
+
+
 STARTING_ORGS: str = """
 HH010613
 HH014131
