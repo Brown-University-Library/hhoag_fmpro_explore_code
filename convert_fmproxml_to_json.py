@@ -141,20 +141,6 @@ class SourceDictMaker:
             result_list.append( item_dict )  # if i > 5: break
         return result_list
 
-    # def _process_rows( self, xml_doc_rows, NAMESPACE, dict_keys ):
-    #     ''' Returns list of item dictionaries.
-    #         Calls _make_data_dict() helper. '''
-    #     result_list = []
-    #     for i,row in enumerate(xml_doc_rows):
-    #       ## get columns (fixed number of columns per row)
-    #       xpath = 'default:COL'
-    #       columns = row.xpath( xpath, namespaces=(NAMESPACE) )
-    #       assert len(columns) == self.expected_column_count, len(columns)
-    #       ## get data_elements (variable number per column)
-    #       item_dict = self._makeDataDict( columns, NAMESPACE, dict_keys )
-    #       result_list.append( item_dict )  # if i > 5: break
-    #     return result_list
-
     def _makeDataDict( self, columns, NAMESPACE, keys, row_MODID: str, row_RECORDID: str ):
         ''' Returns info-dict for a single item; eg { 'artist_first_name': 'andy', 'artist_last_name': 'warhol' }
             Called by: _process_rows()
@@ -173,22 +159,6 @@ class SourceDictMaker:
                 d_dict[ keys[i] ] = self.__handle_multiple_elements( data, keys[i] )  # type: ignore
         # log.debug( f'd_dict, ``{pprint.pformat(d_dict)}``' )
         return d_dict
-
-    # def _makeDataDict( self, columns, NAMESPACE, keys ):
-    #     ''' Returns info-dict for a single item; eg { 'artist_first_name': 'andy', 'artist_last_name': 'warhol' }
-    #         Called by: _process_rows()
-    #         Calls: self.__run_asserts(), self.__handle_single_element(), self.__handle_multiple_elements() '''
-    #     self.__run_asserts( columns, keys )
-    #     xpath = 'default:DATA'; d_dict = {}  # setup
-    #     for i,column in enumerate(columns):
-    #         data = column.xpath( xpath, namespaces=(NAMESPACE) )  # type(data) always a list, but of an empty, a single or multiple elements?
-    #         if len(data) == 0:    # eg <COL(for artist-firstname)></COL>
-    #             d_dict[ keys[i] ] = None
-    #         elif len(data) == 1:  # eg <COL(for artist-firstname)><DATA>'artist_firstname'</DATA></COL>
-    #             d_dict[ keys[i] ] = self.__handle_single_element( data, keys[i] )
-    #         else:                 # eg <COL(for artist-firstname)><DATA>'artist_a_firstname'</DATA><DATA>'artist_b_firstname'</DATA></COL>
-    #             d_dict[ keys[i] ] = self.__handle_multiple_elements( data, keys[i] )
-    #     return d_dict
 
     def __run_asserts( self, columns, keys ):
         ''' Documents the inputs.
@@ -294,7 +264,7 @@ class SourceDictMaker:
             'items': rec_num_dict 
         }
         log.debug( f'Total records in DB: {len(rec_num_dict.items())}' )
-        log.debug( f'number of duplicates: {len(duplicates)}' )
+        log.debug( f'number of non-unique `Record ID` values: {len(duplicates)}' )
         return final_dict
     
 
