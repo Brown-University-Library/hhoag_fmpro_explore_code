@@ -16,7 +16,8 @@ log.debug( 'logging working' )
 ## manager function -------------------------------------------------
 def make_csv_from_fmpro_json( input_path: str ) -> None:
     ## make target orgs-list ----------------------------------------
-    target_orgs: list = STARTING_ORGS.split()
+    # target_orgs: list = STARTING_ORGS.split()
+    target_orgs: list = make_starting_orgs_list()
     sorted_target_orgs: list = sorted( target_orgs )
     ## load json file -----------------------------------------------
     with open( input_path, 'r' ) as f:
@@ -44,33 +45,16 @@ def make_csv_from_fmpro_json( input_path: str ) -> None:
 
 ## helper functions START -------------------------------------------
 
-def validate_organization_id( rows_list: list ) -> None:
-    """ Checks that each row has a valid organization-id.
-        Raises exception if org-id not found or is a list, or has a length of zero.
+
+def make_starting_orgs_list() -> list:
+    """ Makes list of orgs from STARTING_ORGS string.
+        Adds '_' after the 'HH' prefix (original list is like 'HH123456').
         Called by make_csv_from_fmpro_json() """
-    validity_flag: bool = True
-    no_org_id_count: int = 0
-    for i, row_data_dct in enumerate( rows_list ):
-        org_id: str = row_data_dct['Organization ID']
-        if org_id == None:
-            # validity_flag = False
-            log.warning( f'no org_id found for row_data_dct, ``{row_data_dct}``' )
-            no_org_id_count += 1
-            continue
-        elif type(org_id) == list:
-            validity_flag = False
-        elif len(org_id) == 0:
-            validity_flag = False
-        if validity_flag == False:
-            msg = f'problem with org_id, ``{org_id}`` at index ``{i}``; exiting'
-            log.error( msg )
-            raise Exception( msg )
-    if no_org_id_count > 0:
-        log.warning( f'no_org_id_count, ``{no_org_id_count}``' )
-    else:
-        log.debug( 'good; the no_org_id_count is 0' )
-    log.debug( f'validity_flag, ``{validity_flag}``' )
-    return
+    target_orgs: list = []
+    for org_id in STARTING_ORGS.split():
+        target_orgs.append( f'HH_{org_id}' )
+    log.debug( f'target_orgs[0:10], ``{pprint.pformat(target_orgs[0:10])}``' )
+    return target_orgs
 
 
 def make_subset_list( rows_list: list, sorted_target_orgs: list ) -> list:
@@ -111,6 +95,21 @@ def validate_no_tabs( rows_list: list ) -> None:
     return
 
 
+def contains_tab_character( value ) -> bool:
+    """ Checks for tab-character in value, which can be a string or a list. 
+        Called by validate_no_tabs() """
+    assert type(value) in [ str, list ], type(value)
+    if isinstance(value, str) and '\t' in value:
+        log.debug( f'tab character found in value, ``{value}``' )
+        return True
+    if isinstance(value, list):
+        rslt_check: bool = any( contains_tab_character(item) for item in value )
+        if rslt_check:
+            log.debug( f'tab character found in value, ``{value}``' )
+        return rslt_check
+    return False
+
+
 def validate_keys_same( rows_list: list ) -> None:
     """ Checks that keys are the same.
         Raises exception if keys differ.
@@ -126,19 +125,33 @@ def validate_keys_same( rows_list: list ) -> None:
     return
 
 
-def contains_tab_character( value ) -> bool:
-    """ Checks for tab-character in value, which can be a string or a list. 
-        Called by validate_data_dicts() """
-    assert type(value) in [ str, list ], type(value)
-    if isinstance(value, str) and '\t' in value:
-        log.debug( f'tab character found in value, ``{value}``' )
-        return True
-    if isinstance(value, list):
-        rslt_check: bool = any( contains_tab_character(item) for item in value )
-        if rslt_check:
-            log.debug( f'tab character found in value, ``{value}``' )
-        return rslt_check
-    return False
+def validate_organization_id( rows_list: list ) -> None:
+    """ Checks that each row has a valid organization-id.
+        Raises exception if org-id not found or is a list, or has a length of zero.
+        Called by make_csv_from_fmpro_json() """
+    validity_flag: bool = True
+    no_org_id_count: int = 0
+    for i, row_data_dct in enumerate( rows_list ):
+        org_id: str = row_data_dct['Organization ID']
+        if org_id == None:
+            # validity_flag = False
+            log.warning( f'no org_id found for row_data_dct, ``{row_data_dct}``' )
+            no_org_id_count += 1
+            continue
+        elif type(org_id) == list:
+            validity_flag = False
+        elif len(org_id) == 0:
+            validity_flag = False
+        if validity_flag == False:
+            msg = f'problem with org_id, ``{org_id}`` at index ``{i}``; exiting'
+            log.error( msg )
+            raise Exception( msg )
+    if no_org_id_count > 0:
+        log.warning( f'no_org_id_count, ``{no_org_id_count}``' )
+    else:
+        log.debug( 'good; the no_org_id_count is 0' )
+    log.debug( f'validity_flag, ``{validity_flag}``' )
+    return
 
 
 def write_tsv( rows_list: list ) -> None:
