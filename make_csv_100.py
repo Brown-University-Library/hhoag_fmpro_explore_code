@@ -48,11 +48,12 @@ def make_csv_from_fmpro_json( input_path: str ) -> None:
 
 def make_starting_orgs_list() -> list:
     """ Makes list of orgs from STARTING_ORGS string.
-        Adds '_' after the 'HH' prefix (original list is like 'HH123456').
+        Adds '_' after the 'HH' prefix (turns 'HH123456' into 'HH_123456).
         Called by make_csv_from_fmpro_json() """
     target_orgs: list = []
     for org_id in STARTING_ORGS.split():
-        target_orgs.append( f'HH_{org_id}' )
+        updated_org_id: str = f'%s_%s' % ( org_id[0:2], org_id[2:] )
+        target_orgs.append( updated_org_id )
     log.debug( f'target_orgs[0:10], ``{pprint.pformat(target_orgs[0:10])}``' )
     return target_orgs
 
