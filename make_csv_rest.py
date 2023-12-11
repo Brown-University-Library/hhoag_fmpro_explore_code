@@ -28,15 +28,14 @@ log.debug( 'logging working' )
 ## manager function -------------------------------------------------
 def make_csv_from_fmpro_json( input_path: str ) -> None:
     ## make target orgs-list ----------------------------------------
-    # target_orgs: list = STARTING_ORGS.split()
     target_orgs: list = make_starting_orgs_list()
     sorted_target_orgs: list = sorted( target_orgs )
     ## load json file -----------------------------------------------
     with open( input_path, 'r' ) as f:
         source_json_string: str = f.read()
     ## load up python dict ------------------------------------------
-    data_dct = json.loads( source_json_string )
-    rows_dct: dict = data_dct['items']
+    source_data_dct = json.loads( source_json_string )
+    rows_dct: dict = source_data_dct['items']
     assert type(rows_dct) == dict
     ## make list of dicts -------------------------------------------
     rows_list = []
@@ -157,12 +156,12 @@ def validate_organization_id( rows_list: list ) -> None:
 
 
 def make_subset_list( rows_list: list, sorted_target_orgs: list ) -> list:
-    """ Makes a subset list of dicts -- for those dicts where the `Organization ID` value is in `sorted_target_orgs`.
+    """ Makes a subset list of dicts -- for those dicts where the `Organization ID` value is NOT in `sorted_target_orgs`.
         Called by make_csv_from_fmpro_json() """
     subset_rows_list: list = []
     for row_data_dct in rows_list:
         org_id: str = row_data_dct['Organization ID']
-        if org_id in sorted_target_orgs:
+        if org_id not in sorted_target_orgs:
             subset_rows_list.append( row_data_dct )
     log.debug( f'subset_rows_list[0:10], ``{pprint.pformat(subset_rows_list[0:10])}``' )
     return subset_rows_list
@@ -183,7 +182,7 @@ def write_tsv( rows_list: list ) -> None:
     ## make path ----------------------------------------------------
     iso_now_time: str = datetime.datetime.now().isoformat()
     iso_now_time = iso_now_time.replace( ':', '-' )
-    file_name: str = f'output_{iso_now_time}.tsv'
+    file_name: str = f'output_rest_{iso_now_time}.tsv'  #  # to distinguish from `make_csv_100.py` output
     file_path: str = f'../created_tsv_files/{file_name}'  # TODO -- take an output-path argument
     ## make and write file ------------------------------------------
     with open( file_path, 'w', newline='', encoding='utf-8' ) as file:

@@ -183,7 +183,7 @@ def write_tsv( rows_list: list ) -> None:
     ## make path ----------------------------------------------------
     iso_now_time: str = datetime.datetime.now().isoformat()
     iso_now_time = iso_now_time.replace( ':', '-' )
-    file_name: str = f'output_{iso_now_time}.tsv'
+    file_name: str = f'output_100_{iso_now_time}.tsv'  # to distinguish from `make_csv_rest.py` output
     file_path: str = f'../created_tsv_files/{file_name}'  # TODO -- take an output-path argument
     ## make and write file ------------------------------------------
     with open( file_path, 'w', newline='', encoding='utf-8' ) as file:
