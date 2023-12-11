@@ -1,13 +1,13 @@
 """
-Makes a TSV file from a FileMaker Pro jsonized export.
+_WILL_ (currently just a copy of `make_csv_100.py`) a TSV file from a FileMaker Pro jsonized export.
 
 Notes:
-- Only includes rows where the `Organization ID` value is in the STARTING_ORGS list.
+- Will exclude rows where the `Organization ID` value is in the STARTING_ORGS list.
 - the output file will not overwrite previous output files -- because a timestamp is included in the filename.
 - TODO: the output file is hard-coded to go to a '../created_tsv_files/' dir; add an output-path argument.
 
 Usage:
-(venv) $ python ./make_csv_100.py --input_path "/path/to/file.json"
+(venv) $ python ./make_csv_rest.py --input_path "/path/to/file.json"
 """
 
 import argparse, csv, datetime, json, logging, os, pprint
