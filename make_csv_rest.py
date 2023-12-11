@@ -1,5 +1,6 @@
 """
 _WILL_ (currently just a copy of `make_csv_100.py`) a TSV file from a FileMaker Pro jsonized export.
+The file will contain only records that have a "Part Two" value.
 
 Notes:
 - Will exclude rows where the `Organization ID` value is in the STARTING_ORGS list.
@@ -156,13 +157,17 @@ def validate_organization_id( rows_list: list ) -> None:
 
 
 def make_subset_list( rows_list: list, sorted_target_orgs: list ) -> list:
-    """ Makes a subset list of dicts -- for those dicts where the `Organization ID` value is NOT in `sorted_target_orgs`.
+    """ Makes a subset list of dicts:
+        - excludes data where the `Organization ID` value is in `sorted_target_orgs`.
+        - excludes data where the `PartDesignation` value is not 'Part Two'.
         Called by make_csv_from_fmpro_json() """
     subset_rows_list: list = []
     for row_data_dct in rows_list:
         org_id: str = row_data_dct['Organization ID']
+        part_designation: str = row_data_dct['PartDesignation']
         if org_id not in sorted_target_orgs:
-            subset_rows_list.append( row_data_dct )
+            if part_designation.strip() == 'Part Two':
+                subset_rows_list.append( row_data_dct )
     log.debug( f'subset_rows_list[0:10], ``{pprint.pformat(subset_rows_list[0:10])}``' )
     return subset_rows_list
 
